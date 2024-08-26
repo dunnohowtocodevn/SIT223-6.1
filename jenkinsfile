@@ -1,0 +1,99 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define environment variables if needed
+        STAGING_SERVER = 'my-server-ip'
+        PRODUCTION_SERVER = 'my-production-server-ip'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    // Example: Maven build command
+                    sh 'mvn clean package'
+                }
+            }
+        }
+
+        stage('Unit and Integration Tests') {
+            steps {
+                script {
+                    // Example: Run unit tests with Maven
+                    sh 'mvn test'
+                }
+            }
+            post {
+                always {
+                    // Example: Archive test results
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Code Analysis') {
+            steps {
+                script {
+                    // Example: Run SonarQube analysis
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                script {
+                    // Example: Run OWASP ZAP scan (replace with your security tool)
+                    sh 'zap-cli quick-scan --self-contained http://your-app-url'
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            steps {
+                script {
+                    // Example: Deploy to a staging server
+                    sshagent(['staging-server-credentials']) {
+                        sh 'scp target/your-app.war user@${STAGING_SERVER}:/path/to/deploy'
+                        sh 'ssh user@${STAGING_SERVER} "sudo systemctl restart your-app-service"'
+                    }
+                }
+            }
+        }
+
+        stage('Integration Tests on Staging') {
+            steps {
+                script {
+                    // Example: Run integration tests on staging
+                    sh 'mvn verify -Pstaging'
+                }
+            }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                script {
+                    // Example: Deploy to a production server
+                    sshagent(['production-server-credentials']) {
+                        sh 'scp target/your-app.war user@${PRODUCTION_SERVER}:/path/to/deploy'
+                        sh 'ssh user@${PRODUCTION_SERVER} "sudo systemctl restart your-app-service"'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            mail to: 'developer@example.com',
+                 subject: "Pipeline failed at stage: ${currentBuild.currentResult}",
+                 body: "Something went wrong in the pipeline at stage: ${env.STAGE_NAME}. Please check the logs."
+        }
+        success {
+            mail to: 'developer@example.com',
+                 subject: "Pipeline succeeded",
+                 body: "The pipeline completed successfully. All stages passed."
+        }
+    }
+}
