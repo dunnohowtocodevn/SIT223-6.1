@@ -4,58 +4,76 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building...'
-                // Add your build tool command here, e.g., mvn clean install
+                echo 'Building with Maven...'
+
             }
         }
         stage('Unit and Integration Tests') {
             steps {
-                echo 'Running tests...'
-                // Specify test tools, e.g., junit or pytest
+                echo 'Running tests in pytest'
+                
+            }
+            post {
+                always {
+                    script {
+                        // Send email with the status and logs
+                        emailext(
+                            to: 'sonphamwork7@gmail.com',
+                            subject: "Pipeline: Unit and Integration Tests ${currentBuild.currentResult}",
+                            body: """<p>${currentBuild.fullDisplayName} - ${currentBuild.currentResult}</p><p>Check the attached logs for more details.</p>""",
+                            attachLog: true
+                        )
+                    }
+                }
             }
         }
         stage('Code Analysis') {
             steps {
-                echo 'Analyzing code...'
-                // Specify code analysis tool, e.g., SonarQube
+                echo 'Analyzing code in SonarQube'
+                
             }
         }
         stage('Security Scan') {
             steps {
-                echo 'Performing security scan...'
-                // Specify security scan tool, e.g., OWASP Dependency-Check
+                echo 'Performing security scan in OWASP Dependency-Check...'
+                
+            }
+            post {
+                always {
+                    script {
+                        // Send email with the status and logs
+                        emailext(
+                            to: 'sonphamwork7@gmail.com',
+                            subject: "Pipeline: Security Scan ${currentBuild.currentResult}",
+                            body: """<p>${currentBuild.fullDisplayName} - ${currentBuild.currentResult}</p><p>Check the attached logs for more details.</p>""",
+                            attachLog: true
+                        )
+                    }
+                }
             }
         }
         stage('Deploy to Staging') {
             steps {
-                echo 'Deploying to staging...'
-                // Deploy to a staging server, e.g., AWS EC2
+                echo 'Deploying to staging in AWS EC2'
+                
             }
         }
         stage('Integration Tests on Staging') {
             steps {
                 echo 'Running integration tests on staging...'
-                // Test in staging environment
+                
             }
         }
         stage('Deploy to Production') {
             steps {
-                echo 'Deploying to production...'
-                // Deploy to production server
+                echo 'Deploying to production in AWS EC2'
+                
             }
         }
     }
-
     post {
-        success {
-        mail to: 'sonphamwork7@gmail.com',
-             subject: "Pipeline Successful: ${currentBuild.fullDisplayName}",
-             body: "Good news! The pipeline succeeded."
-    }
-        failure {
-        mail to: 'sonphamwork7@gmail.com',
-             subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
-             body: "The pipeline failed. Please check the Jenkins logs."
-    }
+        always {
+            echo 'Pipeline completed.'
+        }
     }
 }
